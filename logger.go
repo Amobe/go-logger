@@ -2,8 +2,11 @@ package logger
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"os"
+
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 const (
@@ -13,32 +16,46 @@ const (
 	LevelDebug
 )
 
+type LogType int
+
+const (
+	LogTypeStdout LogType = iota
+	LogTypeFile
+)
+
+var mLoggerInstance *Logger
+
 type Logger struct {
-	level int
-	err   *log.Logger
-	warn  *log.Logger
-	info  *log.Logger
-	debug *log.Logger
-	depth int
+	level   int
+	logType LogType
+	err     *log.Logger
+	warn    *log.Logger
+	info    *log.Logger
+	debug   *log.Logger
+	depth   int
+	isInit  bool
 }
 
-var loggerInstance *Logger
+func (logger *Logger) Init(logType LogType, filePath string) {
+	var writer io.Writer
 
-func GetLoggerInstance() *Logger {
-	if loggerInstance != nil {
-		return loggerInstance
+	if logger.isInit {
+		return
 	}
 
-	loggerInstance = new(Logger)
-	loggerInstance.Init()
+	logger.logType = logType
+	if logType == LogTypeStdout {
+		writer = os.Stdout
+	} else {
+		writer = &lumberjack.Logger{
+			Filename:   filePath,
+			MaxSize:    256,
+			MaxBackups: 3,
+			MaxAge:     28,
+		}
+	}
 
-	return loggerInstance
-}
-
-func (logger *Logger) Init() {
-	writer := os.Stdout
 	flag := log.Lshortfile
-
 	logger.err = log.New(writer, "[E] ", flag)
 	logger.warn = log.New(writer, "[W] ", flag)
 	logger.info = log.New(writer, "[I] ", flag)
@@ -46,6 +63,7 @@ func (logger *Logger) Init() {
 
 	logger.SetLevel(LevelDebug)
 	logger.depth = 2
+	logger.isInit = true
 }
 
 func (logger *Logger) SetLevel(level int) {
@@ -78,4 +96,12 @@ func (logger *Logger) Debug(format string, v ...interface{}) {
 		return
 	}
 	logger.debug.Output(logger.depth, fmt.Sprintf(format, v...))
+}
+
+func SetLoggerInstance(logger *Logger) {
+	mLoggerInstance = logger
+}
+
+func GetLoggerInstance() *Logger {
+	return mLoggerInstance
 }

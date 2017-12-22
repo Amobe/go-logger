@@ -1,0 +1,6 @@
+hash: 5051b6a5f72b97d99d882e31c844d72224828b5c51d4bc8329c36cbca2620009
+updated: 2017-12-22T19:06:18.3709648+08:00
+imports:
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
+testImports: []
